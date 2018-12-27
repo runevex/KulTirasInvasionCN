@@ -9,6 +9,16 @@ ul{
 div.Content>ul>li{
   padding-bottom:.5em
 }
+div.Content>ul>li ul>li>span:first-child{
+  display:inline-block;
+  width:7em;
+}
+div.Content>ul>li ul>li>span:nth-child(2){
+  display:inline-block;
+  width:7em;
+  color:red;
+  text-align: center;
+}
 </style>
 <script>
   var VEX={page:{
@@ -21,11 +31,11 @@ div.Content>ul>li{
       dateObj2JSDate:function(dateObj){return new Date(dateObj.y+"-"+dateObj.m+"-"+dateObj.d+" 00:00:00");},
       dateObj2Ux:function(dateObj){return new Date(dateObj.y+"-"+dateObj.m+"-"+dateObj.d+" 00:00:00").getTime()/1000;},
       getAreaByIndex:(function(){
-        var areas=["德鲁斯瓦","祖达萨","提拉加德海峡","纳兹米尔","斯托颂","沃顿"];
+        var areas=["提拉加德海峡","纳兹米尔","斯托颂","沃顿","德鲁斯瓦","祖达萨"];
         return function(index){
           return areas[index%6];
         };
-      })()
+      })(),
     },
     today:new Date()
   }};
@@ -51,67 +61,80 @@ div.Content>ul>li{
     var scheduleUl=document.querySelector("div.Content>ul");
 
     var toMHour=function(h){return h>24?h%24:h;}
-    var genTodayInvasionParam=function(){
-      var index=parseInt((todayUx-startAt)/interval);
-      var invasion1=(interval-(todayUx-startAt)%interval)/3600;
-      var durations=[[invasion1,invasion1+7]];
+    var genOneDayInvasionParam=function(dateUx){
+      var invasionSecond1=interval-(dateUx-startAt)%interval;
+      var invasionHour1=invasionSecond1/3600;
+      var index=((dateUx+invasionSecond1-startAt)/interval);
+      var invasion1={duration:[invasionHour1,invasionHour1+7],index:index};
+      var invasions=[invasion1];
 
-      if(durations[0][1]>24){
-        durations[0][1]-=24;
-        return durations;
+      if(invasion1.duration[1]>24){
+        invasion1.duration[1]-=24;
+      }else{
+        if(invasionHour1<=towInvasionBefore){//tow invasion in one day
+          invasions.push({
+            duration:[invasionHour1+19,toMHour(invasionHour1+26)],
+            index:index+1
+          });
+        }
       }
 
-      if(invasion1<=towInvasionBefore){//tow invasion in one day
-        durations.push([invasion1+19,invasion1+26]);
-        if(durations[1][1]>24)durations[1][1]-=24;
-      }
-      
-      return {durations:durations,index:index};
+      return {dateObj:funcs.jsDate2DateObj(new Date(dateUx*1000)),invasion:invasions,dateUx:dateUx};
     }
 
-    var genfutureInvasionParam=function(todayInvasion,dayNum){
-      var ret=[];
+    var genfutureInvasionParamRC=function(invasionParam,maxDays,ret){
+      if(maxDays>0){
+        var prev=invasionParam.invasion[invasionParam.invasion.length-1];
+        var nextUx=invasionParam.dateUx+86400;
+        var next={
+          dateObj:funcs.jsDate2DateObj(new Date(nextUx*1000)),
+          invasion:[],
+          dateUx:nextUx
+        };
 
-      for(var i=0;i<dayNum;++i){
-        var next={durations:[],index:todayInvasion.index+i+1};
-        var prev=null;
-        if(ret.length==0){
-          prev=todayInvasion.durations[todayInvasion.durations.length-1][0];
-        }else{
-          var pDurations=ret[ret.length-1].durations;
-          prev=pDurations[pDurations.length-1][0];
-        }
-
-        var start=toMHour(prev+19);
-        next.durations.push([start,toMHour(start+7)]);
+        var start=toMHour(prev.duration[0]+19);
+        next.invasion.push({duration:[start,toMHour(start+7)],index:prev.index+1});
         if(start<=towInvasionBefore){
-          next.durations.push([start+19,toMHour(start+26)]);
+          next.invasion.push({duration:[start+19,toMHour(start+26)],index:prev.index+2});
         }
         ret.push(next);
+        genfutureInvasionParamRC(next,--maxDays,ret);
       }
-      
-      return ret;
+
     }
 
     var renderInvasionPlan=function(invasionParam,to){
-      var duration=invasionParam.durations;
-      var index=invasionParam.index;
-      var area=funcs.getAreaByIndex(index);
+      var dateObj=invasionParam.dateObj;
+      var invasions=invasionParam.invasion;
 
       var wrapLi=document.createElement("li");
       var wrapDiv=document.createElement("div");
       var dateH3=document.createElement("h3");
       var invasionUl=document.createElement("ul");
-      var dateTxt=document.createTextNode(dateObj.y+"-"+dateObj.m+"-"+dateObj.d);
+      var dateTxt=document.createTextNode(
+        dateObj.y+"-"+
+        (dateObj.m<10?"0"+dateObj.m:dateObj.m)+"-"+
+        (dateObj.d<10?"0"+dateObj.d:dateObj.d)
+      );
       dateH3.appendChild(dateTxt);
 
-      for(var i=0; i<durations.length; i++){
+      for(var i=0; i<invasions.length; i++){
+        var invasion=invasions[i];
         var invasionLi=document.createElement("li");
-        var invasionTxt=document.createTextNode(
-          durations[i][0]+":00 - "+durations[i][1]+":00 在 "+area+" 上演第 "+(index+1)+" 入侵"
-        );
+        var timeSpan=document.createElement("span");
+        var areaSpan=document.createElement("span");
+        var timeTxt=document.createTextNode(invasion.duration[0]+":00 - "+invasion.duration[1]+":00");
+        var linkTxt=document.createTextNode(" 在 ");
+        var areaTxt=document.createTextNode(funcs.getAreaByIndex(invasion.index));
+        var invasionTxt2=document.createTextNode(" 将上演第"+(invasion.index+1)+"次入侵");
         
-        invasionLi.appendChild(invasionTxt);
+        timeSpan.appendChild(timeTxt);
+        areaSpan.appendChild(areaTxt);
+
+        invasionLi.appendChild(timeSpan);
+        invasionLi.appendChild(linkTxt);
+        invasionLi.appendChild(areaSpan);
+        invasionLi.appendChild(invasionTxt2);
         invasionUl.appendChild(invasionLi);
       }
 
@@ -121,13 +144,24 @@ div.Content>ul>li{
       to.appendChild(wrapLi);
     };
     
-    var todayInvasion=genTodayInvasionParam();
-    renderInvasionPlan(todayInvasion);
-    //next few days
-    var futureDaysInvasion=genfutureInvasionParam(todayInvasion,6);
-    for(var j=0;j<7;j++){
-      renderInvasionPlan(futureDaysInvasion[j]);
+    funcs.genList=function(dateUx,nextDays){
+      var todayInvasion=genOneDayInvasionParam(dateUx);
+      renderInvasionPlan(todayInvasion,scheduleUl);
+
+      //next few days
+      var futureInvasions=[];
+      genfutureInvasionParamRC(todayInvasion,nextDays,futureInvasions);
+      for(var j=0;j<futureInvasions.length;j++){
+        renderInvasionPlan(futureInvasions[j],scheduleUl);
+      }
+    };
+    funcs.resetSchedule=function(){
+      while(scheduleUl.hasChildNodes()){
+        scheduleUl.removeChild(scheduleUl.firstChild);
+      }
     }
+
+    funcs.genList(todayUx,6);
   })();
 </script>
 </body>
