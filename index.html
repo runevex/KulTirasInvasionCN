@@ -11,9 +11,24 @@ div.Content>ul>li{
 }
 </style>
 <script>
-  var VEX={page:{constant:{startAt:1544828400,interval:68400/*19*60*60*/},func:{}}};
-  VEX.page.func.date2Obj=function(d){return {y:d.getFullYear(),m:d.getMonth()+1,d:d.getDate()}};
-  VEX.page.constant.today=VEX.page.func.date2Obj(new Date());
+  var VEX={page:{
+    constant:{
+      startAt:1544828400,interval:68400/*19*60*60*/,
+      towInvasionBefore:5
+    },
+    func:{
+      jsDate2DateObj:function(d){return {y:d.getFullYear(),m:d.getMonth()+1,d:d.getDate()}},
+      dateObj2JSDate:function(dateObj){return new Date(dateObj.y+"-"+dateObj.m+"-"+dateObj.d+" 00:00:00");},
+      dateObj2Ux:function(dateObj){return new Date(dateObj.y+"-"+dateObj.m+"-"+dateObj.d+" 00:00:00").getTime()/1000;},
+      getAreaByIndex:(function(){
+        var areas=["德鲁斯瓦","祖达萨","提拉加德海峡","纳兹米尔","斯托颂","沃顿"];
+        return function(index){
+          return areas[index%6];
+        };
+      })()
+    },
+    today:new Date()
+  }};
 </script>
 </head>
 <body>
@@ -30,44 +45,71 @@ div.Content>ul>li{
 
 <script>
   (function(){
-    var PAGE=VEX.page,today=Object.assign({},PAGE.constant.today);
-    var startAt=PAGE.constant.startAt,interval=PAGE.constant.interval;
+    var PAGE=VEX.page,funcs=PAGE.func,today=PAGE.today;
+    var startAt=PAGE.constant.startAt,interval=PAGE.constant.interval,towInvasionBefore=PAGE.constant.towInvasionBefore;
+    var todayObj=funcs.jsDate2DateObj(today),todayUx=funcs.dateObj2Ux(todayObj);
     var scheduleUl=document.querySelector("div.Content>ul");
-    
-    var dateObj2JSDate=function(dateObj){
-      return new Date(dateObj.y+"-"+dateObj.m+"-"+dateObj.d+" 00:00:00");
-    };
-    var dateObj2Ux=function(dateObj){
-      return new Date(dateObj.y+"-"+dateObj.m+"-"+dateObj.d+" 00:00:00").getTime()/1000;
-    }
-    var genDailyInvasionDuration=function(dateObj){
-      var targetUx=dateObj2Ux(dateObj);
-      var invasion1=(interval-(targetUx-startAt)%interval)/3600;
-      var ret=[[invasion1,invasion1+7]];
-      if(ret[0][1]>24){
-        ret[0][1]-=24;
-        return ret;
+
+    var toMHour=function(h){return h>24?h%24:h;}
+    var genTodayInvasionParam=function(){
+      var index=parseInt((todayUx-startAt)/interval);
+      var invasion1=(interval-(todayUx-startAt)%interval)/3600;
+      var durations=[[invasion1,invasion1+7]];
+
+      if(durations[0][1]>24){
+        durations[0][1]-=24;
+        return durations;
       }
-      var invasion2=invasion1+19;
-      if(invasion2<=24){//tow invasion in one day
-        ret.push([invasion2,invasion2+7]);
-        if(ret[1][1]>24)ret[1][1]-=24;
+
+      if(invasion1<=towInvasionBefore){//tow invasion in one day
+        durations.push([invasion1+19,invasion1+26]);
+        if(durations[1][1]>24)durations[1][1]-=24;
+      }
+      
+      return {durations:durations,index:index};
+    }
+
+    var genfutureInvasionParam=function(todayInvasion,dayNum){
+      var ret=[];
+
+      for(var i=0;i<dayNum;++i){
+        var next={durations:[],index:todayInvasion.index+i+1};
+        var prev=null;
+        if(ret.length==0){
+          prev=todayInvasion.durations[todayInvasion.durations.length-1][0];
+        }else{
+          var pDurations=ret[ret.length-1].durations;
+          prev=pDurations[pDurations.length-1][0];
+        }
+
+        var start=toMHour(prev+19);
+        next.durations.push([start,toMHour(start+7)]);
+        if(start<=towInvasionBefore){
+          next.durations.push([start+19,toMHour(start+26)]);
+        }
+        ret.push(next);
       }
       
       return ret;
     }
-    var addInvasionDailyPlan=function(dateObj,to){
+
+    var renderInvasionPlan=function(invasionParam,to){
+      var duration=invasionParam.durations;
+      var index=invasionParam.index;
+      var area=func.getAreaByIndex(index);
+
       var wrapLi=document.createElement("li");
       var wrapDiv=document.createElement("div");
       var dateH3=document.createElement("h3");
       var invasionUl=document.createElement("ul");
       var dateTxt=document.createTextNode(dateObj.y+"-"+dateObj.m+"-"+dateObj.d);
       dateH3.appendChild(dateTxt);
-       
-      var durations=genDailyInvasionDuration(dateObj);
+
       for(var i=0; i<durations.length; i++){
         var invasionLi=document.createElement("li");
-        var invasionTxt=document.createTextNode(durations[i][0]+":00 - "+durations[i][1]+":00");
+        var invasionTxt=document.createTextNode(
+          durations[i][0]+":00 - "+durations[i][1]+":00 在 "+area+" 上演第 "+(index+1)+" 入侵"
+        );
         
         invasionLi.appendChild(invasionTxt);
         invasionUl.appendChild(invasionLi);
@@ -78,18 +120,13 @@ div.Content>ul>li{
       wrapLi.appendChild(wrapDiv);
       to.appendChild(wrapLi);
     };
-    var addInvasionDailyPlanByJSDate=function(jsDate, to){
-      var dateObj=PAGE.func.date2Obj(jsDate);
-      addInvasionDailyPlan(dateObj, to);
-    }
-    //console.log(dateSpans);
     
-    addInvasionDailyPlan(today, scheduleUl);
+    var todayInvasion=genTodayInvasionParam();
+    renderInvasionPlan(todayInvasion);
     //next few days
-    var tmpJSDate=dateObj2JSDate(today);
-    for(var j=0;j<5;j++){
-      tmpJSDate.setDate(tmpJSDate.getDate()+1);
-      addInvasionDailyPlanByJSDate(tmpJSDate, scheduleUl);
+    var futureDaysInvasion=genfutureInvasionParam(todayInvasion,6);
+    for(var j=0;j<7;j++){
+      renderInvasionPlan(futureDaysInvasion[j]);
     }
   })();
 </script>
