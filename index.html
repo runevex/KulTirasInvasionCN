@@ -1,0 +1,97 @@
+
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+ul{
+  list-style:none
+}
+div.Content>ul>li{
+  padding-bottom:.5em
+}
+</style>
+<script>
+  var VEX={page:{constant:{startAt:1544828400,interval:68400/*19*60*60*/},func:{}}};
+  VEX.page.func.date2Obj=function(d){return {y:d.getFullYear(),m:d.getMonth()+1,d:d.getDate()}};
+  VEX.page.constant.today=VEX.page.func.date2Obj(new Date());
+</script>
+</head>
+<body>
+
+<div class="TopTitle">
+  <h1>KulTiras Daily</h1>
+</div>
+
+<div class="Content" style="margin:1em">
+  <h2 style="background:#dbdada;padding:.5em">ͻϮʱ�̱�</h3>
+  <ul>
+  </ul>
+</div>
+
+<script>
+  (function(){
+    var PAGE=VEX.page,today=Object.assign({},PAGE.constant.today);
+    var startAt=PAGE.constant.startAt,interval=PAGE.constant.interval;
+    var scheduleUl=document.querySelector("div.Content>ul");
+    
+    var dateObj2JSDate=function(dateObj){
+      return new Date(dateObj.y+"-"+dateObj.m+"-"+dateObj.d+" 00:00:00");
+    };
+    var dateObj2Ux=function(dateObj){
+      return new Date(dateObj.y+"-"+dateObj.m+"-"+dateObj.d+" 00:00:00").getTime()/1000;
+    }
+    var genDailyInvasionDuration=function(dateObj){
+      var targetUx=dateObj2Ux(dateObj);
+      var invasion1=(interval-(targetUx-startAt)%interval)/3600;
+      var ret=[[invasion1,invasion1+7]];
+      if(ret[0][1]>24){
+        ret[0][1]-=24;
+        return ret;
+      }
+      var invasion2=invasion1+19;
+      if(invasion2<=24){//tow invasion in one day
+        ret.push([invasion2,invasion2+7]);
+        if(ret[1][1]>24)ret[1][1]-=24;
+      }
+      
+      return ret;
+    }
+    var addInvasionDailyPlan=function(dateObj,to){
+      var wrapLi=document.createElement("li");
+      var wrapDiv=document.createElement("div");
+      var dateH3=document.createElement("h3");
+      var invasionUl=document.createElement("ul");
+      var dateTxt=document.createTextNode(dateObj.y+"-"+dateObj.m+"-"+dateObj.d);
+      dateH3.appendChild(dateTxt);
+       
+      var durations=genDailyInvasionDuration(dateObj);
+      for(var i=0; i<durations.length; i++){
+        var invasionLi=document.createElement("li");
+        var invasionTxt=document.createTextNode(durations[i][0]+":00 - "+durations[i][1]+":00");
+        
+        invasionLi.appendChild(invasionTxt);
+        invasionUl.appendChild(invasionLi);
+      }
+
+      wrapDiv.appendChild(dateH3);
+      wrapDiv.appendChild(invasionUl);
+      wrapLi.appendChild(wrapDiv);
+      to.appendChild(wrapLi);
+    };
+    var addInvasionDailyPlanByJSDate=function(jsDate, to){
+      var dateObj=PAGE.func.date2Obj(jsDate);
+      addInvasionDailyPlan(dateObj, to);
+    }
+    //console.log(dateSpans);
+    
+    addInvasionDailyPlan(today, scheduleUl);
+    //next few days
+    var tmpJSDate=dateObj2JSDate(today);
+    for(var j=0;j<5;j++){
+      tmpJSDate.setDate(tmpJSDate.getDate()+1);
+      addInvasionDailyPlanByJSDate(tmpJSDate, scheduleUl);
+    }
+  })();
+</script>
+</body>
+</html>
