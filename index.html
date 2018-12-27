@@ -27,7 +27,7 @@ div.Content>ul>li ul>li>span:nth-child(2){
       towInvasionBefore:5
     },
     func:{
-      jsDate2DateObj:function(d){return {y:d.getFullYear(),m:d.getMonth()+1,d:d.getDate()}},
+      jsDate2DateObj:function(d){return {y:d.getFullYear(),m:d.getMonth()+1,d:d.getDate(),wd:d.getDay()}},
       dateObj2JSDate:function(dateObj){return new Date(dateObj.y+"-"+dateObj.m+"-"+dateObj.d+" 00:00:00");},
       dateObj2Ux:function(dateObj){return new Date(dateObj.y+"-"+dateObj.m+"-"+dateObj.d+" 00:00:00").getTime()/1000;},
       getAreaByIndex:(function(){
@@ -36,6 +36,12 @@ div.Content>ul>li ul>li>span:nth-child(2){
           return areas[index%6];
         };
       })(),
+      getDay:(function(){
+        var days=["周日","周一","周二","周三","周四","周五","周六"];
+        return function(day){
+          return days[day];
+        };
+      })()
     },
     today:new Date()
   }};
@@ -67,6 +73,7 @@ div.Content>ul>li ul>li>span:nth-child(2){
       var index=((dateUx+invasionSecond1-startAt)/interval);
       var invasion1={duration:[invasionHour1,invasionHour1+7],index:index};
       var invasions=[invasion1];
+      var date=new Date(dateUx*1000);
 
       if(invasion1.duration[1]>24){
         invasion1.duration[1]-=24;
@@ -79,7 +86,7 @@ div.Content>ul>li ul>li>span:nth-child(2){
         }
       }
 
-      return {dateObj:funcs.jsDate2DateObj(new Date(dateUx*1000)),invasion:invasions,dateUx:dateUx};
+      return {dateObj:funcs.jsDate2DateObj(date),invasion:invasions,dateUx:dateUx};
     }
 
     var genfutureInvasionParamRC=function(invasionParam,maxDays,ret){
@@ -114,7 +121,7 @@ div.Content>ul>li ul>li>span:nth-child(2){
       var dateTxt=document.createTextNode(
         dateObj.y+"-"+
         (dateObj.m<10?"0"+dateObj.m:dateObj.m)+"-"+
-        (dateObj.d<10?"0"+dateObj.d:dateObj.d)
+        (dateObj.d<10?"0"+dateObj.d:dateObj.d)+" ("+funcs.getDay(dateObj.wd)+")"
       );
       dateH3.appendChild(dateTxt);
 
