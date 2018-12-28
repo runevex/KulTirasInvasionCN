@@ -129,10 +129,14 @@ div.Content>ul>li ul>li>span:nth-child(2){
 
       for(var i=0; i<invasions.length; i++){
         var invasion=invasions[i];
+        var timeStart=invasion.duration[0],timeEnd=invasion.duration[1];
         var invasionLi=document.createElement("li");
         var timeSpan=document.createElement("span");
         var areaSpan=document.createElement("span");
-        var timeTxt=document.createTextNode(invasion.duration[0]+":00 - "+invasion.duration[1]+":00");
+        var timeTxt=document.createTextNode(
+          (timeStart<10?"0"+timeStart:timeStart)+":00 - "+
+          (timeEnd<10?"0"+timeEnd:timeEnd)+":00"
+        );
         var linkTxt=document.createTextNode(" 在 ");
         var areaTxt=document.createTextNode(funcs.getAreaByIndex(invasion.index));
         var invasionTxt2=document.createTextNode(" 将上演第"+(invasion.index+1)+"次入侵");
