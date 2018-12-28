@@ -63,9 +63,8 @@ div.Content>ul>li ul>li>span:nth-child(2){
 
 <script>
   (function(){
-    var PAGE=VEX.page,funcs=PAGE.func,today=PAGE.today;
+    var PAGE=VEX.page,funcs=PAGE.func;
     var startAt=PAGE.constant.startAt,interval=PAGE.constant.interval,towInvasionBefore=PAGE.constant.towInvasionBefore;
-    var todayObj=funcs.jsDate2DateObj(today),todayUx=funcs.dateObj2Ux(todayObj);
     var scheduleUl=document.querySelector("div.Content>ul");
 
     var toMHour=function(h){return h>24?h%24:h;}
@@ -157,7 +156,10 @@ div.Content>ul>li ul>li>span:nth-child(2){
       to.appendChild(wrapLi);
     };
     
-    funcs.genList=function(dateUx,nextDays){
+    funcs.genList=function(jsDate,nextDays){
+      jsDate=jsDate||new Date();
+      nextDays=nextDays||1;
+      var dateUx=funcs.dateObj2Ux(funcs.jsDate2DateObj(jsDate));
       var todayInvasion=genOneDayInvasionParam(dateUx);
       renderInvasionPlan(todayInvasion,scheduleUl);
 
@@ -174,7 +176,7 @@ div.Content>ul>li ul>li>span:nth-child(2){
       }
     }
 
-    funcs.genList(todayUx,6);
+    funcs.genList(PAGE.today,6);
   })();
 </script>
 </body>
