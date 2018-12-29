@@ -30,7 +30,7 @@ div.Content>ul>li ul>li>span:nth-child(2){
     },
     func:{
       jsDate2DateObj:function(d){return {y:d.getFullYear(),m:d.getMonth()+1,d:d.getDate(),wd:d.getDay()}},
-      dateObj2JSDate:function(dateObj){return new Date(dateObj.y+"-"+dateObj.m+"-"+dateObj.d+" 00:00:00");},
+      dateObj2JSDate:function(dateObj){return new Date(dateObj.y+"/"+dateObj.m+"/"+dateObj.d+" 00:00:00");},
       dateObj2Ux:function(dateObj){return new Date(dateObj.y+"-"+dateObj.m+"-"+dateObj.d+" 00:00:00").getTime()/1000;},
       getAreaByIndex:(function(){
         var areas=["提拉加德海峡","纳兹米尔","斯托颂","沃顿","德鲁斯瓦","祖达萨"];
