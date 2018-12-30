@@ -172,7 +172,7 @@ div.Content>ul>li ul>li>span:nth-child(2){
         if(invasion.hasOwnProperty('state')){
           var statusStr="";
           var statusSpan=document.createElement("span");
-          switch(invasionParam.state){
+          switch(invasion.state){
             case 0:statusStr=">即将开始<";break;
             case 1:statusStr=">>进行中<<";break;
             case 2:statusStr="已结束";
