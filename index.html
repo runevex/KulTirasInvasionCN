@@ -11,6 +11,9 @@ ul{
 div.Content>ul>li{
   padding-bottom:.5em
 }
+div.Content>ul>li ul>li>span{
+  text-decoration: inherit
+}
 div.Content>ul>li ul>li>span:first-child{
   display:inline-block;
   width:7em;
@@ -72,7 +75,10 @@ div.Content>ul>li ul>li>span:nth-child(2){
       var invasionSecond1=interval-(dateUx-startAt)%interval;
       var invasionHour1=invasionSecond1/3600;
       var index=((dateUx+invasionSecond1-startAt)/interval);
-      var invasion1={duration:[invasionHour1,invasionHour1+7],index:index};
+      var invasion1={
+        duration:[invasionHour1,invasionHour1+7],
+        index:index
+      };
       var invasions=[invasion1];
       var date=new Date(dateUx*1000);
 
@@ -85,6 +91,21 @@ div.Content>ul>li ul>li>span:nth-child(2){
             index:index+1
           });
         }
+      }
+
+      var nowUx=new Date().getTime()/1000;
+      for(var i=0;i<invasions.length;++i){
+        var item=invasions[i];
+        var durationUx=[dateUx+item[0]*3600,dateUx+item[1]*3600];
+        var state=0;
+        if(nowUx>=durationUx[0]){
+          if(nowUx>=durationUx[1]){
+              state=2;
+            }else{
+              state=1;
+            }
+        }
+        item.state=state;
       }
 
       return {dateObj:funcs.jsDate2DateObj(date),invasion:invasions,dateUx:dateUx};
@@ -147,6 +168,24 @@ div.Content>ul>li ul>li>span:nth-child(2){
         invasionLi.appendChild(linkTxt);
         invasionLi.appendChild(areaSpan);
         invasionLi.appendChild(invasionTxt2);
+
+        if(invasionParam.hasOwnProperty('state')){
+          var statusStr="";
+          var statusSpan=document.createElement("span");
+          switch(invasionParam.state){
+            case 0:statusStr=">即将开始<";break;
+            case 1:statusStr=">>进行中<<";break;
+            case 2:statusStr="已结束";
+              areaSpan.style.setProperty("color","#aaa");
+              invasionLi.style.setProperty("text-decoration","line-through");
+              break;
+            default:
+          }
+          var statusTxt=document.createTextNode(statusStr);
+          statusSpan.appendChild(statusTxt);
+          invasionLi.appendChild(statusSpan);
+        }
+
         invasionUl.appendChild(invasionLi);
       }
 
