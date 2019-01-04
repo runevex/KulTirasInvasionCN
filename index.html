@@ -73,6 +73,10 @@ div.Content>ul>li ul>li>span:nth-child(3){
     var startAt=PAGE.constant.startAt,interval=PAGE.constant.interval,towInvasionBefore=PAGE.constant.towInvasionBefore;
     var scheduleUl=document.querySelector("div.Content>ul");
 
+    var getState=(function(){
+      var states=[">即将开始<",">>进行中<<","已结束","等待开始"];
+      return function(state){return states[state]};
+    })();
     var toMHour=function(h){return h>24?h%24:h;}
     var genOneDayInvasionParam=function(dateUx){
       var invasionSecond1=interval-(dateUx-startAt)%interval;
@@ -103,13 +107,17 @@ div.Content>ul>li ul>li>span:nth-child(3){
           dateUx+duration[0]*3600,
           dateUx+(duration[1]<duration[0]?(duration[1]+24)*3600:duration[1]*3600)
         ];
-        var state=0;
+        var state=3;
         if(nowUx>=durationUx[0]){
           if(nowUx>=durationUx[1]){
               state=2;
             }else{
               state=1;
             }
+        }else{
+          if(nowUx>=durationUx[0]-1*3600){
+            state=0;
+          }
         }
         item.state=state;
       }
@@ -176,15 +184,16 @@ div.Content>ul>li ul>li>span:nth-child(3){
         invasionLi.appendChild(invasionTxt2);
 
         if(invasion.hasOwnProperty('state')){
-          var statusStr="";
+          var statusStr=getState(invasion.state);
           var statusSpan=document.createElement("span");
           switch(invasion.state){
-            case 0:statusStr=">即将开始<";break;
-            case 1:statusStr=">>进行中<<";break;
-            case 2:statusStr="已结束";
+            case 0:break;
+            case 1:break;
+            case 2:
               areaSpan.style.setProperty("color","#aaa");
               invasionLi.style.setProperty("text-decoration","line-through");
               break;
+            case 3:break;
             default:
           }
           var statusTxt=document.createTextNode(statusStr);
